@@ -1,0 +1,55 @@
+documentation/ROLES.md
+  s_7e1acb5363ad84::t_8fc7468e521846 1-104
+pnpm-lock.yaml
+  s_7e1acb5363ad84::t_03c14146d5b020 1-10963
+src/app/api/member-requests/route.ts
+  s_7e1acb5363ad84::t_211c678f54c159 1-85
+src/app/icon.tsx
+  s_7e1acb5363ad84::t_586736af33a850 1-50
+src/app/opengraph-image.tsx
+  s_7e1acb5363ad84::t_eee57398aeb02c 1-81
+src/components/GoogleMapComponent.tsx
+  s_7e1acb5363ad84::t_eae775261d91d0 1-71
+src/components/ui/button.tsx
+  s_7e1acb5363ad84::t_d3a13d75752907 1-58
+.dockerignore
+  s_7e1acb5363ad84::t_b11e44eeec1c75 1-46
+.env.example
+  s_7e1acb5363ad84::t_86565c41747319 1-37
+.github/workflows/ci.yaml
+  s_7e1acb5363ad84::t_b3d693f6cbb8fb 1-91
+Dockerfile
+  s_7e1acb5363ad84::t_3acf85e84720b1 1-61
+Dockerfile.migrations
+  s_7e1acb5363ad84::t_c2a6f177c98aa7 1-22
+README.md
+  s_7e1acb5363ad84::t_8af3d01d04a725 1-149
+docker-compose.yml
+  s_7e1acb5363ad84::t_91acd595855835 1-83
+eslint.config.mjs
+  s_7e1acb5363ad84::t_4ec7a7c1a9110d 1-18
+package.json
+  s_7e1acb5363ad84::t_b4f5bb6049c2a8 1-87
+pnpm-workspace.yaml
+  s_7e1acb5363ad84::t_6ff6023a577034 1-12
+src/app/actions.ts
+  s_7e1acb5363ad84::t_20750be588e8f9 1-60
+src/app/api/health/route.ts
+  s_7e1acb5363ad84::t_27330c6cb26471 1-17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "7b702c2f03e54c979dacbfd85c2ce686401b22e3",
+  "prompts": {},
+  "sessions": {
+    "s_7e1acb5363ad84": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9bb48d30-bc3e-4099-996c-cdd23437c9a4",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Justin McLellan <jmclellan9@gatech.edu>"
+    }
+  }
+}
