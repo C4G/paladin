@@ -33,6 +33,9 @@ RUN pnpm install --frozen-lockfile --ignore-scripts
 # Copy source and build
 COPY . .
 RUN pnpm exec prisma generate
+# Build-time diagnostic: prints lengths (not values) so the build log confirms
+# whether the NEXT_PUBLIC_* build args actually reached the builder stage.
+RUN echo "BUILD-ARG CHECK -> MAPS:${#NEXT_PUBLIC_GOOGLE_MAPS_API_KEY} VAPID:${#NEXT_PUBLIC_VAPID_PUBLIC_KEY} PAYPAL_ID:${#NEXT_PUBLIC_PAYPAL_CLIENT_ID} PAYPAL_PLAN:${#NEXT_PUBLIC_PAYPAL_PLAN_ID}"
 RUN pnpm run build
 
 # Production image — runs the Next.js standalone server
