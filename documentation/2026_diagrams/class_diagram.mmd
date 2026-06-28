@@ -1,0 +1,225 @@
+classDiagram
+    direction LR
+
+    class User {
+        String id
+        String name
+        String email
+        DateTime emailVerified
+        String image
+        UserRole role
+        String subscriptionStatus
+        String notificationPreference
+        Boolean emailNotificationsEnabled
+    }
+
+    class Account {
+        String id
+        String userId
+        String type
+        String provider
+        String providerAccountId
+    }
+
+    class Session {
+        String id
+        String sessionToken
+        String userId
+        DateTime expires
+    }
+
+    class Notification {
+        String id
+        String userId
+        String message
+        Boolean read
+        DateTime createdAt
+        String link
+    }
+
+    class VerificationToken {
+        String identifier
+        String token
+        DateTime expires
+    }
+
+    class Farm {
+        String id
+        String name
+        String address
+        Float latitude
+        Float longitude
+        String description
+        Boolean subscribedToEmails
+        String userId
+        String organizationId
+    }
+
+    class Gate {
+        String id
+        String code
+        String farmId
+    }
+
+    class Request {
+        String id
+        String title
+        String description
+        String type
+        Float latitude
+        Float longitude
+        String status
+        String userId
+        DateTime createdAt
+        DateTime updatedAt
+    }
+
+    class Response {
+        String id
+        String requestId
+        String userId
+        String message
+        String status
+        String volunteerName
+        String volunteerEmail
+        String volunteerPhone
+        String availability
+        String additionalNotes
+        DateTime createdAt
+    }
+
+    class ContactSubmission {
+        String id
+        String name
+        String email
+        String subject
+        String message
+        DateTime createdAt
+    }
+
+    class DisasterResource {
+        String id
+        String title
+        String description
+        String url
+        DateTime createdAt
+        DateTime updatedAt
+    }
+
+    class Crop {
+        String id
+        String type
+        Float acreage
+        String farmId
+    }
+
+    class Livestock {
+        String id
+        String type
+        Int quantity
+        String farmId
+    }
+
+    class Equipment {
+        String id
+        String type
+        String description
+        String farmId
+    }
+
+    class EmergencyNeed {
+        String id
+        String type
+        String details
+        String farmId
+    }
+
+    class Organization {
+        String id
+        String name
+        String description
+        DateTime createdAt
+        DateTime updatedAt
+    }
+
+    class OrganizationMember {
+        String id
+        String userId
+        String organizationId
+        OrgRole role
+        DateTime joinedAt
+    }
+
+    class OrgRequest {
+        String id
+        String name
+        String description
+        String requesterId
+        OrgRequestStatus status
+        DateTime reviewedAt
+        String reviewerId
+        String reviewNotes
+        DateTime createdAt
+        DateTime updatedAt
+    }
+
+    class OrgJoinRequest {
+        String id
+        String userId
+        String organizationId
+        String message
+        OrgRequestStatus status
+        DateTime reviewedAt
+        String reviewNotes
+        DateTime createdAt
+        DateTime updatedAt
+    }
+
+    class UserRole {
+        <<enumeration>>
+        ADMIN
+        STAFF
+    }
+
+    class OrgRole {
+        <<enumeration>>
+        OWNER
+        MANAGER
+        MEMBER
+    }
+
+    class OrgRequestStatus {
+        <<enumeration>>
+        PENDING
+        APPROVED
+        REJECTED
+    }
+
+    User --> Account : accounts
+    User --> Session : sessions
+    User --> Notification : notifications
+    User --> Farm : farms
+    User --> Request : requests
+    User --> Response : responses
+    User --> OrganizationMember : memberships
+    User --> OrgRequest : orgRequests (requester)
+    User --> OrgRequest : orgReviews (reviewer)
+    User --> OrgJoinRequest : joinRequests
+
+    Farm --> Gate : gates
+    Farm --> Crop : crops
+    Farm --> Livestock : livestock
+    Farm --> Equipment : equipment
+    Farm --> EmergencyNeed : emergencyNeeds
+    Farm --> Organization : organization
+
+    Request --> Response : responses
+
+    Organization --> OrganizationMember : members
+    Organization --> Farm : farms
+    Organization --> OrgJoinRequest : joinRequests
+
+    User ..> UserRole : role
+    OrganizationMember ..> OrgRole : role
+    OrgRequest ..> OrgRequestStatus : status
+    OrgJoinRequest ..> OrgRequestStatus : status

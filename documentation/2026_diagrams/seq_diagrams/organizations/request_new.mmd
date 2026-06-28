@@ -1,0 +1,18 @@
+sequenceDiagram
+    actor User
+    participant Browser
+    participant API as API Routes
+    participant DB as PostgreSQL
+    participant Email as Resend Email
+
+    User->>Browser: Navigate to Orgs → "Create Organization" tab
+    Browser->>Browser: Enter organization name and description
+    User->>Browser: Click "Submit Request"
+    Browser->>API: POST /api/organizations
+    Note right of Browser: Body: { name, description }
+    API->>DB: Validate: no existing pending request for this user
+    API->>DB: OrgRequest.create(name, desc, requesterId, status: PENDING)
+    DB-->>API: New org request
+    API->>Email: sendOrgRequestSubmittedEmail(user)
+    Email-->>User: "Your request has been submitted"
+    API-->>Browser: 201 Created

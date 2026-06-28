@@ -1,0 +1,15 @@
+sequenceDiagram
+    actor Responder
+    actor Requester
+    participant Browser
+    participant API as API Routes
+    participant DB as PostgreSQL
+    participant Email as Resend Email
+
+    Responder->>Browser: Click "Cancel My Response"
+    Browser->>API: DELETE /api/requests/{id}/respond/{responseId}
+    API->>DB: Validate: responder owns this response
+    API->>DB: Response.delete(responseId)
+    DB-->>API: Deleted
+    API->>Email: sendRequestClosedToResponderEmail(requester)
+    API-->>Browser: 200 OK

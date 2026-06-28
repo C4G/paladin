@@ -1,0 +1,87 @@
+---
+title: Application Installation
+description: Steps to set up the development environment
+---
+
+## Prerequisites
+
+- [Git](https://docs.github.com/en/get-started/getting-started-with-git/set-up-git) or [GitHub Desktop](https://desktop.github.com/download/)
+- [Node.js](https://nodejs.org/en/download) (includes npm)
+- [Docker](https://www.docker.com/get-started/)
+
+## Setup
+
+1. **Clone the repository**
+
+```bash
+git clone git@github.gatech.edu:cs-6150-computing-for-good/paladin.git
+cd paladin
+```
+
+2. **Get the `.env` file** from the project mentor. It contains secrets for auth, database, Google Maps, PayPal, and push notifications. See [Environment Variables](/dev-docs/environment-variables) for the full list. Do not commit this file.
+
+3. **Install dependencies**
+
+```bash
+npm install
+```
+
+4. **Initialize the database** (starts PostgreSQL in Docker, runs migrations, seeds test data):
+
+```bash
+npm run init
+```
+
+5. **Start the development server**
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## Test Accounts
+
+| Email | Password | Role |
+|-------|----------|------|
+| c4gdevad@gmail.com | *(ask mentor)* | ADMIN |
+| c4gdevstaff@gmail.com | *(ask mentor)* | STAFF |
+
+You can also sign in with any personal Gmail account (it will have no role by default).
+
+## Installing as a PWA
+
+Paladin is a Progressive Web App — users can install it on any device for a native app-like experience with push notifications and offline access to cached pages.
+
+### iOS (Safari)
+
+1. Open the site in **Safari**
+2. Tap the **Share** button (square with arrow)
+3. Scroll down and tap **Add to Home Screen**
+4. Tap **Add**
+
+### Android (Chrome)
+
+1. Open the site in **Chrome**
+2. Tap the **three-dot menu** in the top right
+3. Tap **Add to Home Screen** (or **Install app** if prompted)
+4. Tap **Install**
+
+### Desktop (Chrome / Edge)
+
+1. Open the site in Chrome or Edge
+2. Click the **install icon** (Monitor with arrow) in the address bar, or open the browser menu and select **Install Paladin Farm & Ranch**
+3. Click **Install**
+
+## Useful Commands
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start dev server (Turbopack) |
+| `npm run build` | Production build |
+| `npm run lint` | Run ESLint |
+| `npm run format:fix` | Auto-format with Prettier |
+| `npm test` | Run Vitest tests |
+| `npx prisma studio` | Open database GUI at localhost:5555 |
+| `npx prisma migrate dev` | Apply pending migrations |
+| `make docs` | Generate user manual (PDF, Word, Markdown) |

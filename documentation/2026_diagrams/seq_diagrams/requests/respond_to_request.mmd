@@ -1,0 +1,17 @@
+sequenceDiagram
+    actor Responder
+    actor Requester
+    participant Browser
+    participant API as API Routes
+    participant DB as PostgreSQL
+    participant Email as Resend Email
+
+    Responder->>Browser: Click request → "Respond to Request"
+    Browser->>API: POST /api/requests/{id}/respond
+    Note right of Browser: Body: ETA, equipment (optional)
+    API->>DB: Validate: request not closed, no duplicate response
+    API->>DB: Response.create(userId, requestId, ETA, equipment)
+    DB-->>API: New response
+    API->>Email: sendEmail(requester, responder details + ETA)
+    Email-->>Requester: Email with responder details and ETA
+    API-->>Browser: 201 Created

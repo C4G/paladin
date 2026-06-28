@@ -1,0 +1,10 @@
+{
+  "title": "Organizations",
+  "pages": [
+    "join-organization",
+    "create-organization",
+    "manage-organization",
+    "contact-members",
+    "leave-delete"
+  ]
+}

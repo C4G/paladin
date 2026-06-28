@@ -1,0 +1,24 @@
+sequenceDiagram
+    actor Requester
+    actor NearbyFarmer as Nearby Farmer
+    participant Browser
+    participant API as API Routes
+    participant DB as PostgreSQL
+    participant Push as Web Push
+    participant Email as Resend Email
+
+    Requester->>Browser: Click "New Request" in the navigation bar
+    Browser->>Browser: Fill form: disaster type, farm, gate (optional), description
+    Browser->>API: POST /api/requests
+    API->>DB: Request.create(disasterType, farmId, userId, gateId, description)
+    DB-->>API: New request
+    API->>DB: Farm.findMany() within 100 miles
+    DB-->>API: Nearby farms with users
+    loop Each nearby farmer
+        API->>Push: sendNotification("Farm X needs assistance for {type}")
+        Push-->>NearbyFarmer: Push notification
+    end
+    API->>Email: sendRequestCreatedEmail(requester)
+    Email-->>Requester: Confirmation email
+    API-->>Browser: 201 Created
+    Browser-->>Requester: Dashboard centers on new request

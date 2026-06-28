@@ -1,0 +1,31 @@
+sequenceDiagram
+    actor Owner as Org Owner/Manager
+    actor Member
+    participant Browser
+    participant API as API Routes
+    participant DB as PostgreSQL
+    participant Email as Resend Email
+
+    Owner->>Browser: Dashboard sidebar → "Members"
+    Browser->>API: GET /api/organizations/{orgId}/members
+    API->>DB: OrganizationMember.findMany(orgId)
+    API-->>Browser: Members with roles
+
+    Owner->>Browser: Use role dropdown next to member name
+    Browser->>API: PATCH /api/organizations/{orgId}/members
+    Note right of Browser: { memberId, role: "MANAGER" }
+    API->>DB: OrganizationMember.update(role)
+    API-->>Browser: 200 OK
+
+    Owner->>Browser: Click remove on member entry
+    Browser->>API: DELETE /api/organizations/{orgId}/members
+    API->>DB: OrganizationMember.delete(memberId)
+    API-->>Browser: 200 OK
+
+    Member->>Browser: Click "Contact Owner" on organization card
+    Browser->>API: POST /api/organizations/{orgId}/contact
+    Note right of Browser: { message }
+    API->>DB: Find org OWNER's email
+    API->>Email: sendOrgContactEmail(owner, sender, message)
+    Email-->>Owner: Contact message with reply-to
+    API-->>Browser: 200 OK

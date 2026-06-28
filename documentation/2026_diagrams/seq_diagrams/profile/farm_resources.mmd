@@ -1,0 +1,27 @@
+sequenceDiagram
+    actor User
+    participant Browser
+    participant API as API Routes
+    participant DB as PostgreSQL
+
+    User->>Browser: Select farm from profile editing tabs
+
+    alt Add Resource
+        User->>Browser: "Add Crop" / "Add Livestock" / etc.
+        Browser->>API: POST /api/{resource-type}
+        Note right of Browser: { farmId, type, quantity, ... }
+        API->>DB: Resource.create(data)
+        DB-->>API: New resource
+    else Update Resource
+        User->>Browser: Edit resource details
+        Browser->>API: PATCH /api/{resource-type}?id={id}
+        API->>DB: Resource.update(data)
+        DB-->>API: Updated resource
+    else Delete Resource
+        User->>Browser: Remove resource
+        Browser->>API: DELETE /api/{resource-type}?id={id}
+        API->>DB: Resource.delete(id)
+        DB-->>API: Deleted
+    end
+    API-->>Browser: Success response
+    Browser-->>User: Updated resource list

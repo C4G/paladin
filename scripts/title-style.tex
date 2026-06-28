@@ -1,0 +1,73 @@
+\makeatletter
+\providecommand{\subtitle}[1]{\gdef\@subtitle{#1}}
+\providecommand{\@subtitle}{}
+\renewcommand{\maketitle}{
+  \begin{center}
+    {\LARGE \@title \par}
+    \vskip 0.5em
+    \ifx\@subtitle\empty\else{\large \@subtitle \par}\vskip 0.5em\fi
+    {\large \@date \par}
+  \end{center}
+  \vskip 1.5em
+}
+\makeatother
+
+% Page layout
+\usepackage{geometry}
+\geometry{margin=1in}
+\sloppy
+\setlength{\emergencystretch}{3em}
+
+% Allow long inline code to break at any character
+\usepackage{url}
+\expandafter\def\expandafter\UrlBreaks\expandafter{\UrlBreaks\do\/\do\.\do\-\do\_\do\[\do\]\do\(\do\)}
+
+% Code block styling — grey background with border and word wrap
+\usepackage{framed}
+\usepackage{xcolor}
+\usepackage{float}
+\definecolor{codebg}{HTML}{F5F5F5}
+\definecolor{codeborder}{HTML}{D4D4D4}
+
+\let\oldverbatim\verbatim
+\let\endoldverbatim\endverbatim
+\renewenvironment{verbatim}{%
+  \begin{snugshade}%
+  \begin{oldverbatim}%
+}{%
+  \end{oldverbatim}%
+  \end{snugshade}%
+}
+
+\makeatletter
+\@ifundefined{Shaded}{\newenvironment{Shaded}{}{}}{}
+\makeatother
+\renewenvironment{Shaded}{%
+  \begin{snugshade}%
+}{%
+  \end{snugshade}%
+}
+
+\definecolor{shadecolor}{HTML}{F5F5F5}
+
+% Allow long lines in code blocks to wrap
+\usepackage{fvextra}
+\fvset{breaklines,breaksymbol={},breakanywhere}
+
+% Prevent figures from floating away from where they are in the source
+\usepackage{placeins}
+\let\origfigure\figure
+\let\endorigfigure\endfigure
+\renewenvironment{figure}[1][H]{%
+  \origfigure[H]%
+}{%
+  \endorigfigure%
+  \FloatBarrier%
+}
+
+% Fix tables — full width, reduce font to prevent overflow
+\usepackage{etoolbox}
+\usepackage{calc}
+\setlength{\LTleft}{0pt}
+\setlength{\LTright}{0pt}
+\AtBeginEnvironment{longtable}{\small}

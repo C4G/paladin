@@ -1,0 +1,33 @@
+sequenceDiagram
+    actor Admin
+    actor User as Requester
+    participant Browser
+    participant API as API Routes
+    participant DB as PostgreSQL
+    participant Email as Resend Email
+
+    Admin->>Browser: Navigate to Orgs → "Org Requests" tab
+    Browser->>API: GET /api/org-requests
+    API->>DB: OrgRequest.findMany(status: PENDING)
+    DB-->>API: Pending requests
+    API-->>Browser: List of requests
+
+    alt Approve
+        Admin->>Browser: Click "Approve" + optional review notes
+        Browser->>API: PATCH /api/org-requests
+        Note right of Browser: { requestId, action: "approve" }
+        API->>DB: BEGIN TRANSACTION
+        API->>DB: Organization.create(name, desc, members: [requester as OWNER])
+        API->>DB: OrgRequest.update(status: APPROVED, reviewerId, reviewedAt)
+        API->>DB: COMMIT
+        API->>Email: sendOrgApprovalEmail(requester, orgId)
+        Email-->>User: "Your organization has been approved!"
+    else Reject
+        Admin->>Browser: Click "Reject" + optional review notes
+        Browser->>API: PATCH /api/org-requests
+        Note right of Browser: { requestId, action: "reject", reviewNotes }
+        API->>DB: OrgRequest.update(status: REJECTED, reviewerId, reviewNotes)
+        API->>Email: sendOrgRejectionEmail(requester, reason)
+        Email-->>User: "Your organization request was rejected"
+    end
+    API-->>Browser: 200 OK

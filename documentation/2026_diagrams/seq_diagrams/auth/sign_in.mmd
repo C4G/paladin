@@ -1,0 +1,20 @@
+sequenceDiagram
+    actor User
+    participant Browser
+    participant NextAuth as NextAuth.js
+    participant Google as Google OAuth
+    participant DB as PostgreSQL
+
+    User->>Browser: Click "Sign In"
+    Browser->>NextAuth: GET /signin
+    NextAuth->>Google: Redirect to Google OAuth consent screen
+    Google-->>User: Show consent screen
+    User->>Google: Grant permission
+    Google-->>NextAuth: Return auth code + profile
+    NextAuth->>DB: Create/update User and Account records (Prisma adapter)
+    DB-->>NextAuth: User object
+    alt New User (no phone number)
+        NextAuth-->>Browser: Redirect to /registration
+    else Existing User
+        NextAuth-->>Browser: Redirect to /dashboard
+    end

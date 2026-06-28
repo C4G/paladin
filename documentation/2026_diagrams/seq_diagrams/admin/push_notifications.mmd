@@ -1,0 +1,15 @@
+sequenceDiagram
+    actor User
+    participant Browser
+    participant API as API Routes
+    participant DB as PostgreSQL
+
+    User->>Browser: Click bell icon (bottom-left corner)
+    Browser->>Browser: navigator.serviceWorker.register(sw.js)
+    Browser->>Browser: pushManager.subscribe(vapidPublicKey)
+    Browser->>API: POST /api/notification
+    Note right of Browser: { endpoint, keys: { p256dh, auth } }
+    API->>DB: Notification.upsert(userId, endpoint, p256dh, auth)
+    DB-->>API: Subscription saved
+    API-->>Browser: 200 OK
+    Browser-->>User: Subscribed to push notifications

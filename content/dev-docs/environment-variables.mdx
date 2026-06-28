@@ -1,0 +1,70 @@
+---
+title: Environment Variables
+description: Required environment variables for the application
+---
+
+## Configuration
+
+All environment variables are defined in a `.env` file at the project root. A template is provided in `.env.example`. **Never commit actual values to version control** — `.env` is already in `.gitignore`.
+
+## Required Variables
+
+### Database (PostgreSQL)
+
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | Full connection string, e.g. `postgresql://user:password@localhost:5432/paladin` |
+| `DATABASE_HOST` | Database hostname |
+| `DATABASE_PORT` | Database port |
+| `DATABASE_USER` | Database username |
+| `DATABASE_PW` | Database password |
+| `DATABASE_NAME` | Database name |
+
+### NextAuth
+
+| Variable | Description |
+|----------|-------------|
+| `AUTH_SECRET` | Session encryption key — generate with `openssl rand -base64 32` |
+| `AUTH_URL` | Application URL, e.g. `http://localhost:3000` |
+| `AUTH_GOOGLE_ID` | Google OAuth client ID |
+| `AUTH_GOOGLE_SECRET` | Google OAuth client secret |
+
+### Google Maps
+
+| Variable | Description |
+|----------|-------------|
+| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Google Maps JavaScript API key |
+
+### Email (Resend)
+
+| Variable | Description |
+|----------|-------------|
+| `RESEND_API_KEY` | API key for the Resend email service |
+| `NOTIFICATION_EMAIL` | Recipient for contact form submissions |
+
+### Push Notifications (VAPID)
+
+| Variable | Description |
+|----------|-------------|
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | Public VAPID key for web push |
+| `VAPID_PRIVATE_KEY` | Private VAPID key |
+
+### PayPal
+
+| Variable | Description |
+|----------|-------------|
+| `NEXT_PUBLIC_PAYPAL_CLIENT_ID` | PayPal client ID (exposed to browser) |
+| `NEXT_PUBLIC_PAYPAL_PLAN_ID` | PayPal subscription plan ID |
+| `PAYPAL_CLIENT_ID` | PayPal client ID (server-side) |
+| `PAYPAL_SECRET` | PayPal API secret |
+| `PAYPAL_API_BASE` | API base URL — defaults to `https://api-m.sandbox.paypal.com` |
+
+## Obtaining Credentials
+
+Contact the project mentor for the complete `.env` file. For new API keys:
+
+- **Google OAuth**: [Google Cloud Console](https://console.cloud.google.com/) → APIs & Services → Credentials
+- **Google Maps**: Same console → enable Maps JavaScript API
+- **Resend**: [resend.com/api-keys](https://resend.com/api-keys)
+- **PayPal**: [developer.paypal.com](https://developer.paypal.com/) → My Apps & Credentials
+- **VAPID keys**: Generate with `npx web-push generate-vapid-keys`

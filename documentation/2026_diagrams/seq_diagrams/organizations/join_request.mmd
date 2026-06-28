@@ -1,0 +1,38 @@
+sequenceDiagram
+    actor Joiner as Join Requester
+    actor Owner as Org Owner/Manager
+    participant Browser
+    participant API as API Routes
+    participant DB as PostgreSQL
+    participant Email as Resend Email
+
+    Joiner->>Browser: Navigate to Orgs → "Join Organization" tab
+    Browser->>Browser: Search for organization by name
+    Joiner->>Browser: Click "Request to Join" → optional message → "Send Request"
+    Browser->>API: POST /api/organizations/{orgId}/join-requests
+    Note right of Browser: Body: { message? }
+    API->>DB: Validate: org exists, not already member, no pending request
+    API->>DB: OrgJoinRequest.create(userId, orgId, message, status: PENDING)
+    DB-->>API: New join request
+    API->>Email: sendJoinRequestSubmittedEmail(joiner)
+    Email-->>Joiner: Confirmation email
+    API-->>Browser: 201 Created
+
+    Owner->>Browser: Dashboard sidebar → "Join Requests" (red badge)
+    Browser->>API: GET /api/organizations/{orgId}/join-requests
+    API-->>Browser: List of pending requests
+
+    alt Approve Join
+        Owner->>Browser: Click "Approve"
+        Browser->>API: PATCH /api/organizations/{orgId}/join-requests
+        Note right of Browser: { requestId, action: "approve" }
+        API->>DB: OrganizationMember.create(userId, orgId, role: MEMBER)
+        API->>DB: OrgJoinRequest.update(status: APPROVED)
+        API-->>Browser: 200 OK
+    else Reject Join
+        Owner->>Browser: Click "Reject"
+        Browser->>API: PATCH /api/organizations/{orgId}/join-requests
+        Note right of Browser: { requestId, action: "reject" }
+        API->>DB: OrgJoinRequest.update(status: REJECTED)
+        API-->>Browser: 200 OK
+    end

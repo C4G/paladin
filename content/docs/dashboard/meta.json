@@ -1,0 +1,10 @@
+{
+  "title": "Dashboard",
+  "pages": [
+    "overview",
+    "create-request",
+    "view-your-requests",
+    "respond-to-request",
+    "close-request"
+  ]
+}

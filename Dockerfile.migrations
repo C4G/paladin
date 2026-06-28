@@ -1,0 +1,22 @@
+# Lightweight container that runs Prisma migrations before the app starts.
+FROM node:24-alpine
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+WORKDIR /app
+
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
+
+# Copy only what is needed to run migrations.
+# pnpm-workspace.yaml carries the build-script allowlist (allowBuilds).
+COPY --chown=nextjs:nodejs package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY --chown=nextjs:nodejs prisma ./prisma
+
+# Install prod deps (no scripts), then ensure the prisma CLI is present and generate the client.
+RUN pnpm install --frozen-lockfile --prod --ignore-scripts && \
+    pnpm add -D prisma && \
+    pnpm exec prisma generate
+
+USER nextjs
+
+CMD ["pnpm", "exec", "prisma", "migrate", "deploy"]

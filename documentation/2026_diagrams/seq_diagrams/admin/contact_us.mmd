@@ -1,0 +1,15 @@
+sequenceDiagram
+    actor User
+    actor Admin
+    participant Browser
+    participant API as API Routes
+    participant Email as Resend Email
+
+    User->>Browser: Navigate to "Contact Us" page
+    User->>Browser: Fill form (name, email, message)
+    Browser->>API: POST /api/contact
+    Note right of Browser: { name, email, message }
+    API->>Email: Send contact email to Paladin team
+    Email-->>Admin: Contact form submission
+    API-->>Browser: 200 OK
+    Browser-->>User: "Message sent successfully"

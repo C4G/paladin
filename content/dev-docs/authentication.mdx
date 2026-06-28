@@ -1,0 +1,119 @@
+---
+title: Authentication & Authorization
+description: How auth is implemented
+---
+
+## Authentication
+
+Authentication uses **NextAuth.js v5** with the **Google OAuth** provider. Configuration is in `src/lib/auth.ts`.
+
+Key files:
+
+| File | Purpose |
+|------|---------|
+| `auth.ts` | NextAuth config — Google provider, Prisma adapter, session callbacks |
+| `[...nextauth]/route.ts` | Auth API route handler |
+| `signin/page.tsx` | Custom sign-in page |
+| `schema.prisma` | User, Account, and Session models (Prisma adapter) |
+
+### How It Works
+
+1. User clicks **Sign In** → redirected to Google OAuth consent screen
+2. On success, NextAuth creates/updates `User` and `Account` records via the Prisma adapter
+3. A session is created and stored in the `Session` table
+4. The `auth()` helper (exported from `src/lib/auth.ts`) is used in API routes and server components to check the session
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Browser
+    participant NextAuth as NextAuth.js
+    participant Google as Google OAuth
+    participant DB as PostgreSQL
+
+    User->>Browser: Click "Sign In"
+    Browser->>NextAuth: GET /signin
+    NextAuth->>Google: Redirect to Google OAuth consent screen
+    Google-->>User: Show consent screen
+    User->>Google: Grant permission
+    Google-->>NextAuth: Return auth code + profile
+    NextAuth->>DB: Create/update User and Account records (Prisma adapter)
+    DB-->>NextAuth: User object
+    alt New User (no phone number)
+        NextAuth-->>Browser: Redirect to /registration
+    else Existing User
+        NextAuth-->>Browser: Redirect to /dashboard
+    end
+```
+
+### Registration Flow
+
+New users are redirected to a multi-step registration form. Each step collects different information and POSTs to the respective API route.
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Browser
+    participant API as API Routes
+    participant DB as PostgreSQL
+
+    Browser->>API: GET /api/users?reqType=registration
+    API->>DB: User.findUnique(userId)
+    DB-->>API: Existing user fields
+    API-->>Browser: Pre-fill form data
+
+    User->>Browser: Step 1: Profile (name, phone, bio)
+    User->>Browser: Step 2: Farm Details (name, address, acreage)
+    User->>Browser: Step 3: Crops
+    User->>Browser: Step 4: Livestock
+    User->>Browser: Step 5: Equipment
+    User->>Browser: Step 6: Emergency Needs
+
+    User->>Browser: Submit Registration
+    par Update Profile
+        Browser->>API: PUT /api/users
+        API->>DB: User.update(name, phone, bio)
+        DB-->>API: Updated user
+    and Create Farm
+        Browser->>API: POST /api/farms
+        API->>DB: Farm.create(name, address, coords)
+        DB-->>API: New farm
+    end
+    API->>DB: Crop.create(), Livestock.create(),<br/>Equipment.create(), EmergencyNeed.create()<br/>for each item entered
+    DB-->>API: Sub-resources created
+    API-->>Browser: 200 OK
+    Browser-->>User: Redirect to /dashboard
+```
+
+### Account Linking
+
+The config uses `allowDangerousEmailAccountLinking: true` so that Google accounts merge with email-matched records. Since only Google sign-up is supported, this enables seeded test accounts to work with OAuth.
+
+## Authorization
+
+There are two levels of roles:
+
+### Platform Roles (`UserRole`)
+
+Stored on the `User` model. Defined in `prisma/schema.prisma`:
+
+| Role | Access |
+|------|--------|
+| `ADMIN` | Full access — manage users, review org requests, manage resources, bypass subscription checks |
+| `STAFF` | Bypass subscription checks for request creation |
+| *(none)* | Regular user — standard access |
+
+### Organization Roles (`OrgRole`)
+
+Stored on `OrganizationMember`. Controls per-org permissions:
+
+| Role | Access |
+|------|--------|
+| `OWNER` | Full org control — manage members, approve/reject join requests, delete org |
+| `MANAGER` | Manage members and join requests (cannot remove owners) |
+| `MEMBER` | View-only org membership |
+
+### Where Authorization Is Checked
+
+- **API routes** — each route handler calls `auth()` and checks `session.user.role` or org membership via `checkOrgAdminAccess()` in `src/app/api/organizations/[id]/members/route.ts`
+- **Client components** — conditional UI rendering based on `session.user.role` and the user's org role from API responses

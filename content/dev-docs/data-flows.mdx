@@ -1,0 +1,493 @@
+---
+title: Data Flow Examples
+description: Sequence diagrams for all major application flows
+toc: true
+---
+
+## Diagrams
+
+- [Emergency Requests](#emergency-requests)
+  - [Creating an Emergency Request](#creating-an-emergency-request)
+  - [Viewing Requests](#viewing-requests)
+  - [Responding to a Request](#responding-to-a-request)
+  - [Cancelling a Response](#cancelling-a-response)
+  - [Closing a Request](#closing-a-request)
+- [Organizations](#organizations)
+  - [Organization Creation](#organization-creation)
+  - [Admin: Approve or Reject Organization](#admin-approve-or-reject-organization)
+  - [Joining an Organization](#joining-an-organization)
+  - [Managing Organization Members](#managing-organization-members)
+- [Profile and Farm Management](#profile-and-farm-management)
+  - [View and Update Profile](#view-and-update-profile)
+  - [Farm CRUD](#farm-crud)
+  - [Farm Sub-Resources](#farm-sub-resources-crops-livestock-equipment-gates-emergency-needs)
+- [Admin and System](#admin-and-system)
+  - [Admin: User Management](#admin-user-management)
+  - [Admin: Disaster Resources](#admin-disaster-resources)
+  - [Push Notification Registration](#push-notification-registration)
+  - [Contact Us](#contact-us)
+
+## Emergency Requests
+
+### Creating an Emergency Request
+
+1. User fills out the form in `src/components/DashboardPage.tsx`
+2. Client POSTs to `src/app/api/requests/route.ts`
+3. API validates auth session, checks PayPal subscription status via `src/lib/paypal-subscriptions.ts`
+4. Prisma creates the `Request` record in PostgreSQL
+5. Push notifications sent to nearby farm owners via `src/app/api/requests/route.ts` → `notify()`
+6. Confirmation email sent via `src/lib/email.ts` → Resend API
+
+```mermaid
+sequenceDiagram
+    actor Requester
+    actor NearbyFarmer as Nearby Farmer
+    participant Browser
+    participant API as API Routes
+    participant DB as PostgreSQL
+    participant Push as Web Push
+    participant Email as Resend Email
+
+    Requester->>Browser: Click "New Request" in the navigation bar
+    Browser->>Browser: Fill form: disaster type, farm, gate (optional), description
+    Browser->>API: POST /api/requests
+    API->>DB: Request.create(disasterType, farmId, userId, gateId, description)
+    DB-->>API: New request
+    API->>DB: Farm.findMany() within 100 miles
+    DB-->>API: Nearby farms with users
+    loop Each nearby farmer
+        API->>Push: sendNotification("Farm X needs assistance for {type}")
+        Push-->>NearbyFarmer: Push notification
+    end
+    API->>Email: sendRequestCreatedEmail(requester)
+    Email-->>Requester: Confirmation email
+    API-->>Browser: 201 Created
+    Browser-->>Requester: Dashboard centers on new request
+```
+
+### Viewing Requests
+
+Requests are fetched based on map bounds and filtered by visibility rules depending on user role and sidebar tab.
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Browser
+    participant API as API Routes
+    participant DB as PostgreSQL
+
+    User->>Browser: Navigate to Dashboard
+    Browser->>API: GET /api/requests?ne_lat=..&sw_lng=..
+    API->>DB: Request.findMany(where: bounds + visibility rules)
+    Note right of API: ADMIN: all requests<br/>Yours tab: own requests<br/>Members tab: org farm requests<br/>Nearby tab: all in map bounds
+    DB-->>API: Requests with farm, user, responses
+    API-->>Browser: Request list + map markers
+    Browser-->>User: Display request markers on map
+```
+
+### Responding to a Request
+
+1. User views request details in `src/components/DashboardPage.tsx`
+2. Client POSTs response to `src/app/api/requests/[requestId]/respond/route.ts`
+3. Request owner notified by email via `src/lib/email.ts`
+
+```mermaid
+sequenceDiagram
+    actor Responder
+    actor Requester
+    participant Browser
+    participant API as API Routes
+    participant DB as PostgreSQL
+    participant Email as Resend Email
+
+    Responder->>Browser: Click request → "Respond to Request"
+    Browser->>API: POST /api/requests/{id}/respond
+    Note right of Browser: Body: ETA, equipment (optional)
+    API->>DB: Validate: request not closed, no duplicate response
+    API->>DB: Response.create(userId, requestId, ETA, equipment)
+    DB-->>API: New response
+    API->>Email: sendEmail(requester, responder details + ETA)
+    Email-->>Requester: Email with responder details and ETA
+    API-->>Browser: 201 Created
+```
+
+### Cancelling a Response
+
+```mermaid
+sequenceDiagram
+    actor Responder
+    actor Requester
+    participant Browser
+    participant API as API Routes
+    participant DB as PostgreSQL
+    participant Email as Resend Email
+
+    Responder->>Browser: Click "Cancel My Response"
+    Browser->>API: DELETE /api/requests/{id}/respond/{responseId}
+    API->>DB: Validate: responder owns this response
+    API->>DB: Response.delete(responseId)
+    DB-->>API: Deleted
+    API->>Email: sendRequestClosedToResponderEmail(requester)
+    API-->>Browser: 200 OK
+```
+
+### Closing a Request
+
+```mermaid
+sequenceDiagram
+    actor Requester
+    actor Responder
+    participant Browser
+    participant API as API Routes
+    participant DB as PostgreSQL
+    participant Email as Resend Email
+
+    Requester->>Browser: Click "Close Request" → Confirm
+    Browser->>API: PATCH /api/requests?requestId={id}
+    Note right of Browser: Body: { action: "close" }
+    API->>DB: Request.update(closedOn: now())
+    DB-->>API: Updated request
+    API->>Email: sendRequestClosedEmail(requester)
+    Email-->>Requester: Confirmation email
+    loop Each responder
+        API->>Email: sendRequestClosedToResponderEmail(responder)
+        Email-->>Responder: "Assistance is no longer needed"
+    end
+    API-->>Browser: 200 OK
+```
+
+## Organizations
+
+### Organization Creation
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Browser
+    participant API as API Routes
+    participant DB as PostgreSQL
+    participant Email as Resend Email
+
+    User->>Browser: Navigate to Orgs → "Create Organization" tab
+    Browser->>Browser: Enter organization name and description
+    User->>Browser: Click "Submit Request"
+    Browser->>API: POST /api/organizations
+    Note right of Browser: Body: { name, description }
+    API->>DB: Validate: no existing pending request for this user
+    API->>DB: OrgRequest.create(name, desc, requesterId, status: PENDING)
+    DB-->>API: New org request
+    API->>Email: sendOrgRequestSubmittedEmail(user)
+    Email-->>User: "Your request has been submitted"
+    API-->>Browser: 201 Created
+```
+
+### Admin: Approve or Reject Organization
+
+```mermaid
+sequenceDiagram
+    actor Admin
+    actor User as Requester
+    participant Browser
+    participant API as API Routes
+    participant DB as PostgreSQL
+    participant Email as Resend Email
+
+    Admin->>Browser: Navigate to Orgs → "Org Requests" tab
+    Browser->>API: GET /api/org-requests
+    API->>DB: OrgRequest.findMany(status: PENDING)
+    DB-->>API: Pending requests
+    API-->>Browser: List of requests
+
+    alt Approve
+        Admin->>Browser: Click "Approve" + optional review notes
+        Browser->>API: PATCH /api/org-requests
+        Note right of Browser: { requestId, action: "approve" }
+        API->>DB: BEGIN TRANSACTION
+        API->>DB: Organization.create(name, desc, members: [requester as OWNER])
+        API->>DB: OrgRequest.update(status: APPROVED, reviewerId, reviewedAt)
+        API->>DB: COMMIT
+        API->>Email: sendOrgApprovalEmail(requester, orgId)
+        Email-->>User: "Your organization has been approved!"
+    else Reject
+        Admin->>Browser: Click "Reject" + optional review notes
+        Browser->>API: PATCH /api/org-requests
+        Note right of Browser: { requestId, action: "reject", reviewNotes }
+        API->>DB: OrgRequest.update(status: REJECTED, reviewerId, reviewNotes)
+        API->>Email: sendOrgRejectionEmail(requester, reason)
+        Email-->>User: "Your organization request was rejected"
+    end
+    API-->>Browser: 200 OK
+```
+
+### Joining an Organization
+
+```mermaid
+sequenceDiagram
+    actor Joiner as Join Requester
+    actor Owner as Org Owner/Manager
+    participant Browser
+    participant API as API Routes
+    participant DB as PostgreSQL
+    participant Email as Resend Email
+
+    Joiner->>Browser: Navigate to Orgs → "Join Organization" tab
+    Browser->>Browser: Search for organization by name
+    Joiner->>Browser: Click "Request to Join" → optional message → "Send Request"
+    Browser->>API: POST /api/organizations/{orgId}/join-requests
+    Note right of Browser: Body: { message? }
+    API->>DB: Validate: org exists, not already member, no pending request
+    API->>DB: OrgJoinRequest.create(userId, orgId, message, status: PENDING)
+    DB-->>API: New join request
+    API->>Email: sendJoinRequestSubmittedEmail(joiner)
+    Email-->>Joiner: Confirmation email
+    API-->>Browser: 201 Created
+
+    Owner->>Browser: Dashboard sidebar → "Join Requests" (red badge)
+    Browser->>API: GET /api/organizations/{orgId}/join-requests
+    API-->>Browser: List of pending requests
+
+    alt Approve Join
+        Owner->>Browser: Click "Approve"
+        Browser->>API: PATCH /api/organizations/{orgId}/join-requests
+        Note right of Browser: { requestId, action: "approve" }
+        API->>DB: OrganizationMember.create(userId, orgId, role: MEMBER)
+        API->>DB: OrgJoinRequest.update(status: APPROVED)
+        API-->>Browser: 200 OK
+    else Reject Join
+        Owner->>Browser: Click "Reject"
+        Browser->>API: PATCH /api/organizations/{orgId}/join-requests
+        Note right of Browser: { requestId, action: "reject" }
+        API->>DB: OrgJoinRequest.update(status: REJECTED)
+        API-->>Browser: 200 OK
+    end
+```
+
+### Managing Organization Members
+
+```mermaid
+sequenceDiagram
+    actor Owner as Org Owner/Manager
+    actor Member
+    participant Browser
+    participant API as API Routes
+    participant DB as PostgreSQL
+    participant Email as Resend Email
+
+    Owner->>Browser: Dashboard sidebar → "Members"
+    Browser->>API: GET /api/organizations/{orgId}/members
+    API->>DB: OrganizationMember.findMany(orgId)
+    API-->>Browser: Members with roles
+
+    Owner->>Browser: Use role dropdown next to member name
+    Browser->>API: PATCH /api/organizations/{orgId}/members
+    Note right of Browser: { memberId, role: "MANAGER" }
+    API->>DB: OrganizationMember.update(role)
+    API-->>Browser: 200 OK
+
+    Owner->>Browser: Click remove on member entry
+    Browser->>API: DELETE /api/organizations/{orgId}/members
+    API->>DB: OrganizationMember.delete(memberId)
+    API-->>Browser: 200 OK
+
+    Member->>Browser: Click "Contact Owner" on organization card
+    Browser->>API: POST /api/organizations/{orgId}/contact
+    Note right of Browser: { message }
+    API->>DB: Find org OWNER's email
+    API->>Email: sendOrgContactEmail(owner, sender, message)
+    Email-->>Owner: Contact message with reply-to
+    API-->>Browser: 200 OK
+```
+
+## Profile and Farm Management
+
+### View and Update Profile
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Browser
+    participant API as API Routes
+    participant DB as PostgreSQL
+
+    User->>Browser: Click profile icon → "Edit Profile"
+    Browser->>API: GET /api/users?userId={id}&reqType=profile
+    API->>DB: User.findUnique(include: farms, gates, crops,<br/>livestock, equipment, emergencyNeeds)
+    DB-->>API: Full user profile + all farm data
+    API-->>Browser: Profile data
+    Browser-->>User: Display profile with farm cards
+
+    User->>Browser: Navigate through tabs to update information
+    Browser->>API: PUT /api/users
+    Note right of Browser: { name, phoneNumber, bio, emailNotifications }
+    API->>DB: User.update(where: sessionUserId, data: fields)
+    DB-->>API: Updated user
+    API-->>Browser: 200 OK
+    Browser-->>User: Click "Save Changes"
+```
+
+### Farm CRUD
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Browser
+    participant API as API Routes
+    participant DB as PostgreSQL
+
+    alt Create Farm
+        User->>Browser: Click dropdown → "Add Farm" → fill details
+        Browser->>API: POST /api/farms
+        Note right of Browser: { name, address, city, state,<br/>zip, lat, lng, acreage, year, userId }
+        API->>DB: Farm.create(data)
+        DB-->>API: New farm
+    else Update Farm
+        User->>Browser: Edit farm details
+        Browser->>API: PATCH /api/farms?farmId={id}
+        API->>DB: Farm.update(where: id, data: fields)
+        DB-->>API: Updated farm
+    else Delete Farm
+        User->>Browser: Select farm → "Delete Farm" → confirm
+        Browser->>API: DELETE /api/farms?farmId={id}
+        API->>DB: Farm.delete(id) — cascades all relations
+        DB-->>API: Deleted
+    end
+    API-->>Browser: Success response
+```
+
+### Farm Sub-Resources (Crops, Livestock, Equipment, Gates, Emergency Needs)
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Browser
+    participant API as API Routes
+    participant DB as PostgreSQL
+
+    User->>Browser: Select farm from profile editing tabs
+
+    alt Add Resource
+        User->>Browser: "Add Crop" / "Add Livestock" / etc.
+        Browser->>API: POST /api/{resource-type}
+        Note right of Browser: { farmId, type, quantity, ... }
+        API->>DB: Resource.create(data)
+        DB-->>API: New resource
+    else Update Resource
+        User->>Browser: Edit resource details
+        Browser->>API: PATCH /api/{resource-type}?id={id}
+        API->>DB: Resource.update(data)
+        DB-->>API: Updated resource
+    else Delete Resource
+        User->>Browser: Remove resource
+        Browser->>API: DELETE /api/{resource-type}?id={id}
+        API->>DB: Resource.delete(id)
+        DB-->>API: Deleted
+    end
+    API-->>Browser: Success response
+    Browser-->>User: Updated resource list
+```
+
+## Admin and System
+
+### Admin: User Management
+
+```mermaid
+sequenceDiagram
+    actor Admin
+    participant Browser
+    participant API as API Routes
+    participant DB as PostgreSQL
+
+    Admin->>Browser: Click "Users" in the navigation bar
+    Browser->>API: GET /api/users
+    API->>DB: User.findMany(select: id, name, email, role, subscription)
+    DB-->>API: All users
+    API-->>Browser: User list
+    Browser-->>Admin: Display user table
+
+    Admin->>Browser: Click Role cell → select new role
+    Browser->>API: POST /api/users
+    Note right of Browser: { userId, role: "Admin" | "Staff" | blank }
+    API->>DB: Validate: session.user.role === ADMIN
+    API->>DB: User.update(where: userId, data: { role })
+    DB-->>API: Updated user
+    API-->>Browser: 200 OK
+```
+
+### Admin: Disaster Resources
+
+```mermaid
+sequenceDiagram
+    actor Admin
+    actor User
+    participant Browser
+    participant API as API Routes
+    participant DB as PostgreSQL
+
+    Admin->>Browser: Navigate to "Resources" in the navigation bar
+
+    User->>Browser: View disaster resources (public)
+    Browser->>API: GET /api/disaster-resources
+    API->>DB: DisasterResource.findMany()
+    DB-->>API: All resources
+    API-->>Browser: Resource list
+
+    alt Create Resource
+        Admin->>Browser: "Add Resource"
+        Browser->>API: POST /api/disaster-resources
+        Note right of Browser: { name, URL link, description }
+        API->>DB: Validate: ADMIN role
+        API->>DB: DisasterResource.create(data)
+        DB-->>API: New resource
+    else Update Resource
+        Admin->>Browser: Edit resource
+        Browser->>API: PATCH /api/disaster-resources/{id}
+        API->>DB: DisasterResource.update(data)
+        DB-->>API: Updated resource
+    else Delete Resource
+        Admin->>Browser: "Delete" → confirm
+        Browser->>API: DELETE /api/disaster-resources/{id}
+        API->>DB: DisasterResource.delete(id)
+        DB-->>API: Deleted
+    end
+    API-->>Browser: Success response
+```
+
+### Push Notification Registration
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Browser
+    participant API as API Routes
+    participant DB as PostgreSQL
+
+    User->>Browser: Click bell icon (bottom-left corner)
+    Browser->>Browser: navigator.serviceWorker.register(sw.js)
+    Browser->>Browser: pushManager.subscribe(vapidPublicKey)
+    Browser->>API: POST /api/notification
+    Note right of Browser: { endpoint, keys: { p256dh, auth } }
+    API->>DB: Notification.upsert(userId, endpoint, p256dh, auth)
+    DB-->>API: Subscription saved
+    API-->>Browser: 200 OK
+    Browser-->>User: Subscribed to push notifications
+```
+
+### Contact Us
+
+```mermaid
+sequenceDiagram
+    actor User
+    actor Admin
+    participant Browser
+    participant API as API Routes
+    participant Email as Resend Email
+
+    User->>Browser: Navigate to "Contact Us" page
+    User->>Browser: Fill form (name, email, message)
+    Browser->>API: POST /api/contact
+    Note right of Browser: { name, email, message }
+    API->>Email: Send contact email to Paladin team
+    Email-->>Admin: Contact form submission
+    API-->>Browser: 200 OK
+    Browser-->>User: "Message sent successfully"
+```

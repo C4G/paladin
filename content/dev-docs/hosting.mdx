@@ -1,0 +1,25 @@
+---
+title: Recommended Hosting
+description: Hosting recommendations for production deployment
+---
+
+## Current Production Setup
+
+Paladin is currently deployed at [paladinfarmandranch.com](https://paladinfarmandranch.com/) on infrastructure provided by Georgia Tech. The application runs as a standalone Next.js build behind Nginx, with a PostgreSQL database on the same server. GitHub Actions handles CI/CD (see `.github/workflows/cd.yaml`).
+
+## Recommended Free Hosting
+
+If the GT-provided server is no longer available, the following free-tier options are suitable:
+
+| Component | Recommended | Notes |
+|-----------|------------|-------|
+| **Database** | [Neon](https://neon.tech) or [Supabase](https://supabase.com) | Free PostgreSQL hosting; no credit card required |
+| **Application** | [Vercel](https://vercel.com) | Free tier for Next.js apps; automatic deployments from GitHub. Next.js standalone output is already configured (`output: 'standalone'` in `next.config.mjs`) |
+| **Alternative** | [Render](https://render.com) | Free tier for web services + PostgreSQL if a single provider is preferred |
+
+### Migration Notes
+
+- Update `DATABASE_URL` in environment variables to point to the new hosted PostgreSQL instance
+- Run `npx prisma migrate deploy` against the new database to apply the schema
+- Set all environment variables (see [Environment Variables](/dev-docs/environment-variables)) on the hosting platform
+- Vercel auto-detects Next.js projects — connect the GitHub repo and it deploys on push

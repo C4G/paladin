@@ -1,0 +1,13 @@
+sequenceDiagram
+    actor User
+    participant Browser
+    participant API as API Routes
+    participant DB as PostgreSQL
+
+    User->>Browser: Navigate to Dashboard
+    Browser->>API: GET /api/requests?ne_lat=..&sw_lng=..
+    API->>DB: Request.findMany(where: bounds + visibility rules)
+    Note right of API: ADMIN: all requests<br/>Yours tab: own requests<br/>Members tab: org farm requests<br/>Nearby tab: all in map bounds
+    DB-->>API: Requests with farm, user, responses
+    API-->>Browser: Request list + map markers
+    Browser-->>User: Display request markers on map

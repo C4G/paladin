@@ -1,0 +1,12 @@
+# Approve native dependencies that need to run install/build scripts.
+# (pnpm blocks build scripts by default; these are required for the app to build/run.)
+# puppeteer is set to false to avoid a large Chromium download — it is only used for
+# offline documentation diagram generation, not for CI, build, or runtime.
+allowBuilds:
+  '@prisma/client': true
+  '@prisma/engines': true
+  prisma: true
+  esbuild: true
+  sharp: true
+  unrs-resolver: true
+  puppeteer: false

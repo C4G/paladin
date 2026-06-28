@@ -1,0 +1,10 @@
+{
+  "title": "Getting Started",
+  "pages": [
+    "registration",
+    "edit-profile",
+    "light-dark-mode",
+    "donations",
+    "notifications"
+  ]
+}

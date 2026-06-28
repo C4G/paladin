@@ -1,0 +1,4 @@
+{
+  "title": "Admin",
+  "pages": ["manage-users", "manage-resources", "review-org-requests"]
+}

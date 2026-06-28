@@ -1,0 +1,20 @@
+sequenceDiagram
+    actor User
+    participant Browser
+    participant API as API Routes
+    participant DB as PostgreSQL
+
+    User->>Browser: Click profile icon → "Edit Profile"
+    Browser->>API: GET /api/users?userId={id}&reqType=profile
+    API->>DB: User.findUnique(include: farms, gates, crops,<br/>livestock, equipment, emergencyNeeds)
+    DB-->>API: Full user profile + all farm data
+    API-->>Browser: Profile data
+    Browser-->>User: Display profile with farm cards
+
+    User->>Browser: Navigate through tabs to update information
+    Browser->>API: PUT /api/users
+    Note right of Browser: { name, phoneNumber, bio, emailNotifications }
+    API->>DB: User.update(where: sessionUserId, data: fields)
+    DB-->>API: Updated user
+    API-->>Browser: 200 OK
+    Browser-->>User: Click "Save Changes"

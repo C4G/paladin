@@ -1,0 +1,47 @@
+---
+title: Database Backup
+description: How to back up and restore the PostgreSQL database
+---
+
+## Backup
+
+The database is PostgreSQL, run via Docker in development. Use `pg_dump` inside the container to create a backup:
+
+```bash
+docker exec paladin-paladin-db-1 pg_dump -U root paladin > backup.sql
+```
+
+
+## Restore
+
+To restore a backup into the local Docker database:
+
+```bash
+docker exec -i paladin-paladin-db-1 psql -U root paladin < backup.sql
+```
+
+For a remote/production database:
+
+```bash
+psql -U $DATABASE_USER -h $DATABASE_HOST -p $DATABASE_PORT $DATABASE_NAME < backup.sql
+```
+
+Or rebuild from schema (no data):
+
+```bash
+npx prisma migrate deploy
+npx prisma db seed
+```
+
+## Schema Files
+
+| File | Purpose |
+|------|---------|
+| `prisma/schema.prisma` | Prisma schema definition (models, relations, enums) |
+| `prisma/migrations/` | Ordered SQL migration files |
+| `prisma/seed.mjs` | Seed script with test data |
+| `prisma/seed/` | Seed data modules (users, farms, organizations, etc.) |
+
+## Automated Backups
+
+In production, database backups should be scheduled via cron or the hosting provider's backup feature. If using Neon or Supabase, automatic point-in-time recovery is included on their free tiers.

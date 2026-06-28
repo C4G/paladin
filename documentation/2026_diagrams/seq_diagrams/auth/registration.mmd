@@ -1,0 +1,32 @@
+sequenceDiagram
+    actor User
+    participant Browser
+    participant API as API Routes
+    participant DB as PostgreSQL
+
+    Browser->>API: GET /api/users?reqType=registration
+    API->>DB: User.findUnique(userId)
+    DB-->>API: Existing user fields
+    API-->>Browser: Pre-fill form data
+
+    User->>Browser: Step 1: Profile (name, phone, bio)
+    User->>Browser: Step 2: Farm Details (name, address, acreage)
+    User->>Browser: Step 3: Crops
+    User->>Browser: Step 4: Livestock
+    User->>Browser: Step 5: Equipment
+    User->>Browser: Step 6: Emergency Needs
+
+    User->>Browser: Submit Registration
+    par Update Profile
+        Browser->>API: PUT /api/users
+        API->>DB: User.update(name, phone, bio)
+        DB-->>API: Updated user
+    and Create Farm
+        Browser->>API: POST /api/farms
+        API->>DB: Farm.create(name, address, coords)
+        DB-->>API: New farm
+    end
+    API->>DB: Crop.create(), Livestock.create(),<br/>Equipment.create(), EmergencyNeed.create()<br/>for each item entered
+    DB-->>API: Sub-resources created
+    API-->>Browser: 200 OK
+    Browser-->>User: Redirect to /dashboard

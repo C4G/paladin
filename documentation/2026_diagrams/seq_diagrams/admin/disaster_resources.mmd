@@ -1,0 +1,32 @@
+sequenceDiagram
+    actor Admin
+    actor User
+    participant Browser
+    participant API as API Routes
+    participant DB as PostgreSQL
+
+    User->>Browser: View disaster resources (public)
+    Browser->>API: GET /api/disaster-resources
+    API->>DB: DisasterResource.findMany()
+    DB-->>API: All resources
+    API-->>Browser: Resource list
+
+    alt Create Resource
+        Admin->>Browser: "Add Resource"
+        Browser->>API: POST /api/disaster-resources
+        Note right of Browser: { name, URL link, description }
+        API->>DB: Validate: ADMIN role
+        API->>DB: DisasterResource.create(data)
+        DB-->>API: New resource
+    else Update Resource
+        Admin->>Browser: Edit resource
+        Browser->>API: PATCH /api/disaster-resources/{id}
+        API->>DB: DisasterResource.update(data)
+        DB-->>API: Updated resource
+    else Delete Resource
+        Admin->>Browser: "Delete" → confirm
+        Browser->>API: DELETE /api/disaster-resources/{id}
+        API->>DB: DisasterResource.delete(id)
+        DB-->>API: Deleted
+    end
+    API-->>Browser: Success response

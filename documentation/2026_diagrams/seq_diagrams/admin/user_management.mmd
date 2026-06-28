@@ -1,0 +1,20 @@
+sequenceDiagram
+    actor Admin
+    participant Browser
+    participant API as API Routes
+    participant DB as PostgreSQL
+
+    Admin->>Browser: Click "Users" in the navigation bar
+    Browser->>API: GET /api/users
+    API->>DB: User.findMany(select: id, name, email, role, subscription)
+    DB-->>API: All users
+    API-->>Browser: User list
+    Browser-->>Admin: Display user table
+
+    Admin->>Browser: Click Role cell → select new role
+    Browser->>API: POST /api/users
+    Note right of Browser: { userId, role: "Admin" | "Staff" | blank }
+    API->>DB: Validate: session.user.role === ADMIN
+    API->>DB: User.update(where: userId, data: { role })
+    DB-->>API: Updated user
+    API-->>Browser: 200 OK

@@ -1,0 +1,24 @@
+sequenceDiagram
+    actor User
+    participant Browser
+    participant API as API Routes
+    participant DB as PostgreSQL
+
+    alt Create Farm
+        User->>Browser: Click dropdown → "Add Farm" → fill details
+        Browser->>API: POST /api/farms
+        Note right of Browser: { name, address, city, state,<br/>zip, lat, lng, acreage, year, userId }
+        API->>DB: Farm.create(data)
+        DB-->>API: New farm
+    else Update Farm
+        User->>Browser: Edit farm details
+        Browser->>API: PATCH /api/farms?farmId={id}
+        API->>DB: Farm.update(where: id, data: fields)
+        DB-->>API: Updated farm
+    else Delete Farm
+        User->>Browser: Select farm → "Delete Farm" → confirm
+        Browser->>API: DELETE /api/farms?farmId={id}
+        API->>DB: Farm.delete(id) — cascades all relations
+        DB-->>API: Deleted
+    end
+    API-->>Browser: Success response

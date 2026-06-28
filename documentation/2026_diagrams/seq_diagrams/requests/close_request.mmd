@@ -1,0 +1,20 @@
+sequenceDiagram
+    actor Requester
+    actor Responder
+    participant Browser
+    participant API as API Routes
+    participant DB as PostgreSQL
+    participant Email as Resend Email
+
+    Requester->>Browser: Click "Close Request" → Confirm
+    Browser->>API: PATCH /api/requests?requestId={id}
+    Note right of Browser: Body: { action: "close" }
+    API->>DB: Request.update(closedOn: now())
+    DB-->>API: Updated request
+    API->>Email: sendRequestClosedEmail(requester)
+    Email-->>Requester: Confirmation email
+    loop Each responder
+        API->>Email: sendRequestClosedToResponderEmail(responder)
+        Email-->>Responder: "Assistance is no longer needed"
+    end
+    API-->>Browser: 200 OK

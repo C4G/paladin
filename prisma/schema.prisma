@@ -1,0 +1,289 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  ADMIN
+  STAFF
+}
+
+enum OrgRole {
+  OWNER
+  MANAGER
+  MEMBER
+}
+
+enum OrgRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id                   String               @id @default(cuid())
+  name                 String?
+  email                String               @unique
+  emailVerified        DateTime?
+  image                String?
+  role                 UserRole?
+  phoneNumber          String?
+  bio                  String?
+  subscription         Boolean              @default(false)
+  paypalSubscriptionId String?              @unique
+  emailNotifications   Boolean              @default(true)
+  accounts             Account[]
+  sessions             Session[]
+  farms                Farm[]
+  requests             Request[]
+  responses            Response[]
+  notifications        Notification[]
+  orgMemberships       OrganizationMember[]
+  orgRequests          OrgRequest[]         @relation("OrgRequestRequester")
+  orgReviews           OrgRequest[]         @relation("OrgRequestReviewer")
+  orgJoinRequests      OrgJoinRequest[]
+  bulkOperations       BulkOperation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Notification {
+  id         String    @id @default(cuid())
+  endpoint   String
+  p256dh     String
+  auth       String
+  expiration DateTime?
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  createdAt  DateTime  @default(now())
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+model Farm {
+  id              String          @id @default(cuid())
+  latitude        Float
+  longitude       Float
+  name            String
+  streetAddress   String?
+  city            String?
+  state           String?
+  zipcode         String?
+  totalAcreage    String?
+  yearEstablished String?
+  otherInfo       String?
+  userId          String
+  other           String?
+  organizationId  String?
+  gates           Gate[]
+  crops           Crop[]
+  livestocks      Livestock[]
+  equipments      Equipment[]
+  emergencyNeeds  EmergencyNeed[]
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization    Organization?   @relation(fields: [organizationId], references: [id])
+  requests        Request[]
+}
+
+model Gate {
+  id        String    @id @default(cuid())
+  name      String
+  latitude  Float
+  longitude Float
+  farm      Farm      @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  farmId    String
+  requests  Request[]
+}
+
+model Request {
+  id              String     @id @default(cuid())
+  farmId          String
+  userId          String
+  disasterType    String
+  createdAt       DateTime   @default(now())
+  closedOn        DateTime?
+  preferredGateId String?
+  comments        String?
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  farm            Farm       @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  preferredGate   Gate?      @relation(fields: [preferredGateId], references: [id])
+  responses       Response[]
+}
+
+model Response {
+  id                   String   @id @default(cuid())
+  userId               String
+  RequestId            String
+  estimatedArrivalTime DateTime
+  equipment            String
+  respondedAt          DateTime @default(now())
+  responder            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  request              Request  @relation(fields: [RequestId], references: [id], onDelete: Cascade)
+
+  @@index([RequestId])
+}
+
+model ContactSubmission {
+  id        String   @id @default(cuid())
+  firstName String
+  lastName  String
+  email     String
+  message   String
+  createdAt DateTime @default(now())
+}
+
+model DisasterResource {
+  id          String   @id @default(cuid())
+  name        String
+  link        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Crop {
+  id      String @id @default(cuid())
+  name    String
+  acreage String
+  farm    Farm   @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  farmId  String
+}
+
+model Livestock {
+  id     String @id @default(cuid())
+  name   String
+  count  String
+  farm   Farm   @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  farmId String
+}
+
+model Equipment {
+  id          String  @id @default(cuid())
+  type        String
+  description String?
+  farm        Farm    @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  farmId      String
+}
+
+model EmergencyNeed {
+  id      String @id @default(cuid())
+  type    String
+  details String
+  farm    Farm   @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  farmId  String
+}
+
+model Organization {
+  id              String               @id @default(cuid())
+  name            String
+  description     String?
+  members         OrganizationMember[]
+  farms           Farm[]
+  joinRequests    OrgJoinRequest[]
+  bulkOperations  BulkOperation[]
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+}
+
+model OrganizationMember {
+  id             String       @id @default(cuid())
+  userId         String
+  organizationId String
+  role           OrgRole      @default(MEMBER)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  joinedAt       DateTime     @default(now())
+
+  @@unique([userId, organizationId])
+}
+
+model OrgRequest {
+  id          String           @id @default(cuid())
+  name        String
+  description String?
+  requesterId String
+  status      OrgRequestStatus @default(PENDING)
+  reviewedAt  DateTime?
+  reviewerId  String?
+  reviewNotes String?
+  requester   User             @relation("OrgRequestRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  reviewer    User?            @relation("OrgRequestReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model OrgJoinRequest {
+  id             String           @id @default(cuid())
+  userId         String
+  organizationId String
+  message        String?
+  status         OrgRequestStatus @default(PENDING)
+  reviewedAt     DateTime?
+  reviewNotes    String?
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@unique([userId, organizationId])
+}
+
+model BulkOperation {
+  id             String       @id @default(cuid())
+  organizationId String
+  status         String       @default("processing") // processing | completed | cancelled | failed
+  totalItems     Int
+  processedItems Int          @default(0)
+  successCount   Int          @default(0)
+  errorCount     Int          @default(0)
+  skippedCount   Int          @default(0)
+  payload        String       @db.Text // JSON array of remaining entries
+  errorDetails   String       @default("[]") @db.Text // JSON array of error entries
+  createdById    String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy      User         @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
