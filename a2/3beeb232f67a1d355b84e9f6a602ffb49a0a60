@@ -1,0 +1,62 @@
+src/app/api/member-requests/route.ts
+  s_7e1acb5363ad84::t_211c678f54c159 1-85
+src/app/api/health/route.ts
+  s_7e1acb5363ad84::t_27330c6cb26471 1-17
+prisma/seed/users.mjs
+  s_7e1acb5363ad84::t_1100963fc27d28 10-11
+  s_7e1acb5363ad84::t_6d2751ff7d40ad 18-19
+  s_7e1acb5363ad84::t_c9ab929a31202f 7-9
+  s_7e1acb5363ad84::t_7cf070dca999c0 12-17
+  s_7e1acb5363ad84::t_1567c6d0f24271 20-22
+  s_7e1acb5363ad84::t_2a5fb0bfb10b74 1-6,23-67
+package.json
+  s_7e1acb5363ad84::t_b4f5bb6049c2a8 1-87
+src/app/opengraph-image.tsx
+  s_7e1acb5363ad84::t_eee57398aeb02c 1-81
+eslint.config.mjs
+  s_7e1acb5363ad84::t_4ec7a7c1a9110d 1-18
+.dockerignore
+  s_7e1acb5363ad84::t_b11e44eeec1c75 1-46
+src/components/GoogleMapComponent.tsx
+  s_7e1acb5363ad84::t_eae775261d91d0 1-71
+pnpm-workspace.yaml
+  s_7e1acb5363ad84::t_6ff6023a577034 1-12
+Dockerfile
+  s_7e1acb5363ad84::t_3acf85e84720b1 1-61
+src/app/icon.tsx
+  s_7e1acb5363ad84::t_586736af33a850 1-50
+src/app/actions.ts
+  s_7e1acb5363ad84::t_20750be588e8f9 1-60
+.github/workflows/ci.yaml
+  s_7e1acb5363ad84::t_b3d693f6cbb8fb 1-91
+Dockerfile.migrations
+  s_7e1acb5363ad84::t_c2a6f177c98aa7 1-22
+docker-compose.yml
+  s_7e1acb5363ad84::t_91acd595855835 1-83
+README.md
+  s_7e1acb5363ad84::t_8af3d01d04a725 1-149
+src/components/ui/button.tsx
+  s_7e1acb5363ad84::t_d3a13d75752907 1-58
+pnpm-lock.yaml
+  s_7e1acb5363ad84::t_03c14146d5b020 1-10963
+.env.example
+  s_7e1acb5363ad84::t_86565c41747319 1-37
+documentation/ROLES.md
+  s_7e1acb5363ad84::t_8fc7468e521846 1-104
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "a23beeb232f67a1d355b84e9f6a602ffb49a0a60",
+  "prompts": {},
+  "sessions": {
+    "s_7e1acb5363ad84": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9bb48d30-bc3e-4099-996c-cdd23437c9a4",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": null
+    }
+  }
+}
