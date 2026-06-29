@@ -15,10 +15,15 @@ ARG NEXT_PUBLIC_PAYPAL_CLIENT_ID
 ARG NEXT_PUBLIC_PAYPAL_PLAN_ID
 ARG NEXTAUTH_URL
 
-ENV NEXT_PUBLIC_VAPID_PUBLIC_KEY=$NEXT_PUBLIC_VAPID_PUBLIC_KEY
-ENV NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=$NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-ENV NEXT_PUBLIC_PAYPAL_CLIENT_ID=$NEXT_PUBLIC_PAYPAL_CLIENT_ID
-ENV NEXT_PUBLIC_PAYPAL_PLAN_ID=$NEXT_PUBLIC_PAYPAL_PLAN_ID
+# NEXT_PUBLIC_* are public values (they ship in the client bundle). We use the
+# build arg when provided, but fall back to these literals because Coolify's
+# compose build does not reliably inject build args (it passes --build-arg NAME
+# with --env-file /dev/null, so the values arrive empty). The ${VAR:-default}
+# form uses the default whenever the arg is unset OR empty.
+ENV NEXT_PUBLIC_VAPID_PUBLIC_KEY=${NEXT_PUBLIC_VAPID_PUBLIC_KEY:-BAWPF54hU4-Q7dC8KAI9wD6khbd-tTEnbPTONEZlmGuFPHnNy240doXi9dYBch4eD8rQOsWUM5XJRRMX7Sg8xpQ}
+ENV NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:-AIzaSyD2jEqLA_THqFK1xBCPdQMdugm6yIDXyX4}
+ENV NEXT_PUBLIC_PAYPAL_CLIENT_ID=${NEXT_PUBLIC_PAYPAL_CLIENT_ID:-AbKCiCBaGT15Dd11ZgiLRRiMZ1BbsQUQvzD-apmySJfWhpinDDXHaJxCVhTfixrf203T3BzwcFyIgHT6}
+ENV NEXT_PUBLIC_PAYPAL_PLAN_ID=${NEXT_PUBLIC_PAYPAL_PLAN_ID:-P-2GJ11950GF960102XNGYIWVQ}
 ENV NEXTAUTH_URL=$NEXTAUTH_URL
 
 # Placeholder so the Prisma client can be constructed during `next build` page-data
@@ -33,9 +38,6 @@ RUN pnpm install --frozen-lockfile --ignore-scripts
 # Copy source and build
 COPY . .
 RUN pnpm exec prisma generate
-# Build-time diagnostic: prints lengths (not values) so the build log confirms
-# whether the NEXT_PUBLIC_* build args actually reached the builder stage.
-RUN echo "BUILD-ARG CHECK -> MAPS:${#NEXT_PUBLIC_GOOGLE_MAPS_API_KEY} VAPID:${#NEXT_PUBLIC_VAPID_PUBLIC_KEY} PAYPAL_ID:${#NEXT_PUBLIC_PAYPAL_CLIENT_ID} PAYPAL_PLAN:${#NEXT_PUBLIC_PAYPAL_PLAN_ID}"
 RUN pnpm run build
 
 # Production image — runs the Next.js standalone server
